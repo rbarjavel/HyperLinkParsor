@@ -109,7 +109,6 @@ def process(rootPath: str) -> None:
 if __name__ == '__main__':
     files = process(sys.argv[1])
 
-    df = pd.DataFrame({'files': files})
-    df.to_csv('./result.csv')
-
-    print(files)
+    if files:
+        df = pd.DataFrame({'files': files})
+        df.to_csv('./result.csv')
