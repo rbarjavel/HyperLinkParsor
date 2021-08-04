@@ -7,10 +7,10 @@ First you will need to extract the zip file.
 In a powershell window
 
 ```bash
-# cd inside the extract folder
+# cd inside the extracted folder
 cd HyperLinkParsor
 
-# install dependencys
+# install dependencies
 pip install -r requirements.txt
 ```
 
