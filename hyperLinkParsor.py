@@ -2,15 +2,21 @@ import sys
 import glob
 import zipfile
 import os
+import re
 
 import pandas as pd
 from lxml import etree
 
-namespacesList = [
-    "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
-    "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
-    "http://schemas.openxmlformats.org/drawingml/2006/main",
-]
+
+def getVersion(data: str, doctype: str) -> str:
+    if doctype == 'docx':
+        version = re.search(r"(?:xmlns:w=\")([^ \"]*)", str(data))
+    if doctype == 'xlsx':
+        version = re.search(r"(?:xmlns=\")([^ \"]*)", str(data))
+    if doctype == 'pptx':
+        version = re.search(r"(?:xmlns:a=\")([^ \"]*)", str(data))
+
+    return version.group(1)
 
 
 def getDocxAsXML(documentPath: str) -> str:
@@ -46,32 +52,32 @@ def getPptxAsXML(documentPath: str) -> any:
     return xml
 
 
-def hyperLinkBaliseDocx(data: str, pathFile: str) -> bool:
+def hyperLinkBaliseDocx(data: str, pathFile: str, version: str) -> bool:
     tree = etree.fromstring(data)
     if tree.xpath("//w:hyperlink", namespaces={
-        'w': namespacesList[0]
+        'w': version
     }):
         print(f'\t{pathFile} -> found')
         return True
     return False
 
 
-def hyperLinkBaliseXlsx(data: any, pathFile: str) -> bool:
+def hyperLinkBaliseXlsx(data: any, pathFile: str, version: str) -> bool:
     for d in data:
         tree = etree.fromstring(d)
         if tree.xpath("//ns:hyperlink", namespaces={
-            'ns': namespacesList[1]
+            'ns': version
         }):
             print(f'\t{pathFile} -> found')
             return True
     return False
 
 
-def hyperLinkBalisePptx(data: any, pathFile: str) -> bool:
+def hyperLinkBalisePptx(data: any, pathFile: str, version: str) -> bool:
     for d in data:
         tree = etree.fromstring(d)
         if tree.xpath("//a:hlinkClick", namespaces={
-            'a': namespacesList[2]
+            'a': version
         }):
             print(f'\t{pathFile} -> found')
             return True
@@ -86,21 +92,24 @@ def process(rootPath: str) -> None:
     files = glob.glob(f'{rootPath}/**/*.docx', recursive=True)
     print('- Docx:')
     for file in files:
-        if hyperLinkBaliseDocx(getDocxAsXML(file), file):
+        data = getDocxAsXML(file)
+        if hyperLinkBaliseDocx(data, file, getVersion(data, 'docx')):
             filesPaths.append(os.path.abspath(file))
 
     # Searching in all .xlsx files
     files = glob.glob(f'{rootPath}/**/*.xlsx', recursive=True)
     print('- Xlsx:')
     for file in files:
-        if hyperLinkBaliseXlsx(getXlsxAsXML(file), file):
+        data = getXlsxAsXML(file)
+        if hyperLinkBaliseXlsx(data, file, getVersion(data, 'xlsx')):
             filesPaths.append(os.path.abspath(file))
 
     # Searching in all .pptx files
     files = glob.glob(f'{rootPath}/**/*.pptx', recursive=True)
     print('- Pptx:')
     for file in files:
-        if hyperLinkBalisePptx(getPptxAsXML(file), file):
+        data = getPptxAsXML(file)
+        if hyperLinkBalisePptx(data, file, getVersion(data, 'pptx')):
             filesPaths.append(os.path.abspath(file))
 
     return filesPaths
