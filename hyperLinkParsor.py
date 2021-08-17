@@ -8,7 +8,7 @@ import pandas as pd
 from lxml import etree
 
 
-def getVersion(data: str, doctype: str) -> str:
+def get_version(data: str, doctype: str) -> str:
     if doctype == 'docx':
         version = re.search(r"(?:xmlns:w=\")([^ \"]*)", str(data))
     if doctype == 'xlsx':
@@ -19,7 +19,7 @@ def getVersion(data: str, doctype: str) -> str:
     return version.group(1)
 
 
-def getDocxAsXML(documentPath: str) -> str:
+def get_docx_as_xml(documentPath: str) -> str:
     with open(documentPath, 'rb') as f:
         zip = zipfile.ZipFile(f)
         xml = zip.read('word/document.xml')
